@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%highlight(%-5level) %d{HH:mm:ss.SSS} [%thread] %logger{25} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Hibernate's own "show_sql" writer logs at INFO under this logger -->
+    <logger name="org.hibernate.SQL" level="DEBUG" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+
+    <!-- Uncomment to also see bound parameter VALUES for every "?" in the SQL above -->
+    <!--
+    <logger name="org.hibernate.type.descriptor.sql" level="TRACE" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+    -->
+
+    <logger name="org.hibernate" level="WARN"/>
+    <logger name="com.corp.learning.hibernate" level="INFO"/>
+
+    <root level="WARN">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
+</configuration>
