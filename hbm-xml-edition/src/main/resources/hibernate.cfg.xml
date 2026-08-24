@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-configuration PUBLIC
+        "-//Hibernate/Hibernate Configuration DTD 3.0//EN"
+        "http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd">
+
+<hibernate-configuration>
+    <session-factory>
+
+        <!--
+            Default connection settings, valid INSIDE the docker-compose
+            network (service name "db"). HibernateUtil overrides these with
+            DB_URL / DB_USER / DB_PASSWORD env vars if present, so the same
+            jar also works against a locally-run Postgres - see HibernateUtil.
+        -->
+        <property name="hibernate.connection.driver_class">org.postgresql.Driver</property>
+        <property name="hibernate.connection.url">jdbc:postgresql://db:5432/hibernate_lab</property>
+        <property name="hibernate.connection.username">hibernate_user</property>
+        <property name="hibernate.connection.password">hibernate_pass</property>
+
+        <property name="hibernate.dialect">org.hibernate.dialect.PostgreSQLDialect</property>
+
+        <!--
+            Hibernate's own built-in DriverManager-based connection pool.
+            Deliberately NOT using an external pool (e.g. HikariCP) here:
+            it's an extra dependency this learning project doesn't need, and
+            keeping the dependency tree minimal avoids classpath/version
+            conflicts. For a real production service you WOULD add HikariCP
+            (or another proper pool) - this setting is the one line you'd
+            replace to do that.
+        -->
+        <property name="hibernate.connection.pool_size">10</property>
+
+        <!--
+            DDL strategy. "create" wipes and recreates the schema on every
+            startup - perfect for a repeatable learning lab where every demo
+            run starts from a clean, known state. In a real corporate project
+            you would use "validate" (fail fast if the schema doesn't match
+            what a proper migration tool like Flyway/Liquibase produced) or,
+            at most, "update" in early development. NEVER "create"/"create-drop"
+            against a real environment.
+        -->
+        <property name="hibernate.hbm2ddl.auto">create</property>
+
+        <!-- Show us exactly what SQL Hibernate generates - the whole point of this lab -->
+        <property name="hibernate.show_sql">true</property>
+        <property name="hibernate.format_sql">true</property>
+        <property name="hibernate.use_sql_comments">true</property>
+        <property name="hibernate.generate_statistics">true</property>
+
+        <!-- Sessions bound to the current thread, the classic (non-JTA) way -->
+        <property name="hibernate.current_session_context_class">thread</property>
+
+        <!--
+            NOTE: mapping files are intentionally NOT listed here as
+            <mapping resource="..."/> entries. That legacy Configuration.configure()
+            path has a known soft spot where it can silently bind ZERO
+            entities in some environments, with no error until a much later,
+            confusing "Unknown entity: ..." failure on the first save().
+
+            Instead, HibernateUtil registers every hbm.xml explicitly via
+            MetadataSources.addResource(...) in Java code, and verifies the
+            binding count immediately at startup, failing loudly if anything
+            is missing. See HibernateUtil.java for the full explanation.
+            This file only supplies connection/dialect/schema-management
+            settings, consumed via StandardServiceRegistryBuilder().configure().
+        -->
+
+    </session-factory>
+</hibernate-configuration>
