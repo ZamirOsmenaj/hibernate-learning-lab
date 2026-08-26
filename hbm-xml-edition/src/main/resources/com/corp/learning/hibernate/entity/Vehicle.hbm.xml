@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC
+        "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+        "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping package="com.corp.learning.hibernate.entity.inheritance">
+
+    <!--
+        TABLE PER CONCRETE CLASS (UNION-SUBCLASS) INHERITANCE
+        abstract="true": there is NO "vehicles" table - Vehicle itself is
+        never instantiated/stored directly, only via its concrete subclasses.
+
+        Each <union-subclass> below gets a completely independent table that
+        repeats ALL of the base class's columns plus its own. Polymorphic
+        queries ("from Vehicle") are executed as a SQL UNION across every
+        concrete table.
+
+        Because ids are generated independently per table with plain
+        IDENTITY, two different vehicles (a Car and a Truck) could get the
+        SAME numeric id - which is fine for direct lookups by (id, type) but
+        would be ambiguous for a bare polymorphic "get Vehicle by id". A
+        shared sequence generator (used below) avoids that by handing out
+        globally unique ids across every subclass table - the recommended
+        approach for union-subclass in real projects.
+    -->
+    <class name="Vehicle" abstract="true">
+
+        <id name="id" column="id" type="long">
+            <generator class="sequence">
+                <param name="sequence_name">vehicle_seq</param>
+            </generator>
+        </id>
+
+        <property name="plateNumber" column="plate_number" type="string" not-null="true" unique="true" length="20"/>
+        <property name="purchaseDate" column="purchase_date" type="java.time.LocalDate"/>
+
+        <many-to-one name="company" column="company_id"
+                     class="com.corp.learning.hibernate.entity.Company" not-null="true"/>
+
+        <union-subclass name="Car" table="cars">
+            <property name="numberOfSeats" column="number_of_seats" type="integer"/>
+        </union-subclass>
+
+        <union-subclass name="Truck" table="trucks">
+            <property name="loadCapacityKg" column="load_capacity_kg" type="big_decimal"/>
+        </union-subclass>
+
+    </class>
+
+</hibernate-mapping>
