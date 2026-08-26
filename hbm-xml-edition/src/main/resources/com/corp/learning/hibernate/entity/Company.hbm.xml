@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC
+        "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+        "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping package="com.corp.learning.hibernate.entity">
+
+    <class name="Company" table="companies">
+
+        <!-- Surrogate primary key, DB-generated (Postgres SERIAL/IDENTITY) -->
+        <id name="id" column="id" type="long">
+            <generator class="identity"/>
+        </id>
+
+        <!--
+            OPTIMISTIC LOCKING
+            Hibernate adds "and version = ?" to every UPDATE/DELETE WHERE clause
+            and bumps the value on every successful write. If another
+            transaction changed the row in between, 0 rows match and Hibernate
+            throws StaleObjectStateException / OptimisticLockException.
+            See Demo04_OptimisticLocking.
+        -->
+        <version name="version" column="version" type="int"/>
+
+        <!--
+            <property> ATTRIBUTES WORTH KNOWING (demonstrated across this file
+            and Employee.hbm.xml; full list in THEORY.md):
+              name      -> Java field name
+              column    -> DB column name (defaults to the property name)
+              type      -> Hibernate type (Java<->SQL mapping); often inferred
+                           by reflection but can be given explicitly
+              not-null  -> adds NOT NULL to the generated DDL + a pre-flush check
+              unique    -> adds a UNIQUE constraint
+              length    -> VARCHAR length
+              update    -> if false, column is excluded from UPDATE statements
+              insert    -> if false, column is excluded from INSERT statements
+              formula   -> SQL expression computed on SELECT, no column at all
+        -->
+        <property name="name" column="name" type="string" not-null="true" unique="true" length="150"/>
+
+        <property name="registrationCode" column="registration_code" type="string" not-null="true" unique="true" length="20"/>
+
+        <property name="foundedDate" column="founded_date" type="java.time.LocalDate"/>
+
+        <!--
+            <component> : embeds Address's columns straight into "companies".
+            No separate table, no identity - a pure value type.
+        -->
+        <component name="address" class="com.corp.learning.hibernate.entity.component.Address">
+            <property name="street" column="address_street" length="150"/>
+            <property name="city" column="address_city" length="100"/>
+            <property name="postalCode" column="address_postal_code" length="20"/>
+            <property name="country" column="address_country" length="100"/>
+        </component>
+
+        <!--
+            ONE-TO-MANY Company -> Department, using a <set> (the collection
+            type you already know), but the key thing to study here is
+            cascade + inverse:
+
+              inverse="true"
+                  Department is the association owner (it has the company_id
+                  FK column and a many-to-one mapping back to Company). Telling
+                  Hibernate inverse="true" here means: "don't bother issuing
+                  extra SQL from this side just because you see items in this
+                  Set - trust Department.company instead". This avoids
+                  redundant/duplicate UPDATE statements. See THEORY.md.
+
+              cascade="save-update"
+                  Persisting/updating a Company will cascade to its
+                  Departments automatically. Deliberately NOT "delete" or
+                  "all" here: deleting a Company must NOT silently delete its
+                  Departments. Because department.company_id is NOT NULL with
+                  no ON DELETE CASCADE at the DB level, attempting to delete a
+                  Company that still owns Departments raises a foreign-key
+                  ConstraintViolationException - "you can't delete the parent
+                  while children exist". See Demo01.
+        -->
+        <set name="departments" inverse="true" cascade="save-update" lazy="true">
+            <key column="company_id" not-null="true"/>
+            <one-to-many class="com.corp.learning.hibernate.entity.Department"/>
+        </set>
+
+        <!--
+            ONE-TO-MANY Company -> Vehicle (union-subclass hierarchy).
+            Here we DO use cascade="all-delete-orphan": a company's fleet is
+            considered fully owned by the company (contrast with departments
+            above, on purpose, to show both cascading styles side by side).
+        -->
+        <set name="fleet" inverse="true" cascade="all-delete-orphan" lazy="true">
+            <key column="company_id" not-null="true"/>
+            <one-to-many class="com.corp.learning.hibernate.entity.inheritance.Vehicle"/>
+        </set>
+
+    </class>
+
+</hibernate-mapping>
