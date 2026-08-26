@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC
+        "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+        "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping package="com.corp.learning.hibernate.entity">
+
+    <!--
+        SINGLE TABLE (DISCRIMINATOR) INHERITANCE
+        One physical table "employees" holds base Employee rows AND every
+        Manager/Developer row. The "employee_type" column tells Hibernate
+        which Java class each row maps to. See <subclass> below and
+        Manager.java / Developer.java.
+    -->
+    <class name="Employee" table="employees" batch-size="10" discriminator-value="EMPLOYEE">
+
+        <id name="id" column="id" type="long">
+            <generator class="identity"/>
+        </id>
+
+        <discriminator column="employee_type" type="string" length="20"/>
+        <!--
+            Because Employee is NOT abstract, plain Employee rows (e.g. an
+            HR staff member who is neither Manager nor Developer) are also
+            allowed, stored with employee_type = 'EMPLOYEE'. Only mark the
+            base <class> abstract="true" (as Vehicle.hbm.xml does) if the
+            base type itself should never be instantiated directly.
+        -->
+
+        <!--
+            NATURAL-ID: an alternate business key besides the surrogate id.
+            Hibernate can look entities up by natural id efficiently
+            (session.byNaturalId) and it documents "this is what uniquely
+            identifies an Employee in the real world" independent of the
+            technical PK. mutable="true" because, unlike a real natural key,
+            we do allow the email to be changed later.
+
+            NOTE on ordering: the Hibernate mapping DTD requires a strict
+            element sequence inside <class>: id, discriminator?, natural-id?,
+            (version|timestamp)?, then properties/associations. natural-id
+            MUST come before version - swapping them (as an earlier version
+            of this file did) makes the DTD-validating parser reject the
+            whole document with "Could not parse mapping document", with no
+            further detail. If you ever hit that error on a hand-written
+            hbm.xml, element order is the first thing to check.
+        -->
+        <natural-id mutable="true">
+            <property name="email" column="email" type="string" not-null="true" unique="true" length="150"/>
+        </natural-id>
+
+        <version name="version" column="version" type="int"/>
+
+        <property name="firstName" column="first_name" type="string" not-null="true" length="60"/>
+        <property name="lastName" column="last_name" type="string" not-null="true" length="60"/>
+        <property name="salary" column="salary" type="big_decimal" not-null="true"/>
+
+        <!--
+            update="false": once inserted, this column is never included in
+            an UPDATE statement again, even if the Java field is changed and
+            the entity is flushed - it is effectively immutable after creation.
+            Good fit for audit-style "when did this happen" columns.
+        -->
+        <property name="hireDate" column="hire_date" type="java.time.LocalDate" not-null="true" update="false"/>
+
+        <!--
+            formula: NOT a real column. On every SELECT, Hibernate substitutes
+            this SQL expression instead of a column reference. Never appears
+            in INSERT/UPDATE. Perfect for simple derived values you don't want
+            to keep in sync manually.
+
+            access="field": Employee.annualSalary intentionally has a getter
+            but NO setter (see Employee.java - "no setter on purpose"). With
+            the default access="property" (JavaBean getter/setter reflection),
+            Hibernate requires a setter to exist for EVERY mapped property,
+            even a formula it never actually writes to - and fails at
+            SessionFactory build time with PropertyNotFoundException: "Could
+            not locate setter method for property [...#annualSalary]" (shows
+            up building the Manager/Developer subclass persisters, since they
+            inherit this property). access="field" makes Hibernate read/write
+            the private field directly instead of hunting for a setter, so
+            the missing setter is no longer a problem - the public getter is
+            still there for your own Java code to call as normal.
+        -->
+        <property name="annualSalary" formula="(salary * 12)" type="big_decimal" access="field"/>
+
+        <component name="address" class="com.corp.learning.hibernate.entity.component.Address">
+            <property name="street" column="address_street" length="150"/>
+            <property name="city" column="address_city" length="100"/>
+            <property name="postalCode" column="address_postal_code" length="20"/>
+            <property name="country" column="address_country" length="100"/>
+        </component>
+
+        <!--
+            MANY-TO-ONE Employee -> Department, fetch="join": every time an
+            Employee is loaded, Hibernate issues a SQL JOIN to departments
+            and populates it eagerly in the SAME query - no extra round trip,
+            but always pays the join cost even when you never touch
+            getDepartment(). Contrasts with Department.company (fetch=select,
+            lazy) and Project.employees (fetch=subselect) - see
+            Demo05_FetchingStrategies for all three side by side.
+        -->
+        <many-to-one name="department" column="department_id" class="Department"
+                     not-null="true" fetch="join"/>
+
+        <!--
+            ONE-TO-ONE Employee -> EmployeeProfile, PK-to-PK association.
+
+            NOTE on constrained: constrained="true" belongs ONLY on the side
+            that actually owns the foreign key - i.e. the entity whose <id>
+            uses generator class="foreign" (EmployeeProfile, see its hbm.xml).
+            It tells Hibernate/hbm2ddl "MY primary key has an FK referencing
+            the other side's table". Putting it here as well (on Employee)
+            would wrongly claim employees.id has an FK referencing
+            employee_profiles.id - the exact opposite of the real dependency
+            (EmployeeProfile depends on Employee, not the other way round).
+            Compare with the canonical Hibernate reference example (Person/
+            Address, "bidirectional one-to-one on a primary key"): the owning
+            Person side has a plain <one-to-one/>, and only the Address side
+            (with generator="foreign") declares constrained="true".
+
+            cascade="all" (NOT "all-delete-orphan"): Hibernate rejects
+            orphan-delete cascading on a constrained one-to-one - it can't do
+            orphan detection here the way it can for a one-to-many, since
+            there's no meaningful way to "unlink" one side of a shared
+            primary key without deleting a row outright. Plain "all" still
+            covers what we actually need: creating/updating/deleting the
+            Employee cascades to its EmployeeProfile automatically.
+        -->
+        <one-to-one name="employeeProfile" class="EmployeeProfile"
+                    cascade="all" fetch="select"/>
+
+        <!--
+            <bag> COLLECTION MAPPING: unordered, DUPLICATES ALLOWED, no index
+            column at all (unlike <list>) and no uniqueness constraint (unlike
+            <set>). Maps naturally to java.util.List but Hibernate does NOT
+            guarantee element order on reload. Good fit for something like a
+            simple, possibly-repeating tag list where order/uniqueness don't
+            matter. NOTE the trade-off: because a bag has no way to identify
+            "this one row" cheaply, Hibernate always deletes ALL rows and
+            re-inserts on any change - least efficient of the collection
+            mappings for updates.
+        -->
+        <bag name="certifications" table="employee_certifications" cascade="all" lazy="true">
+            <key column="employee_id" not-null="true"/>
+            <element column="certification_name" type="string" length="150"/>
+        </bag>
+
+        <!--
+            MANY-TO-MANY Employee <-> Project. This side OWNS the join table
+            "employee_project" (inverse="false", the default - stated
+            explicitly here for clarity). fetch="subselect": when multiple
+            Employees' projects collections need initializing in the same
+            session, Hibernate re-runs the ORIGINAL employee query as a
+            subselect to fetch ALL of their projects in ONE extra query
+            instead of one query per employee. Compare with the plain lazy
+            "select" strategy on Project.employees (Demo05).
+        -->
+        <set name="projects" table="employee_project" inverse="false" cascade="save-update" lazy="true" fetch="subselect">
+            <key column="employee_id"/>
+            <many-to-many column="project_id" class="Project"/>
+        </set>
+
+        <!--
+            SINGLE TABLE SUBCLASSES
+            Both share the "employees" table; discriminator-value picks the
+            Java type per row. Subclass-only properties (team_size,
+            programming_language) are simply NULL on rows of the other type.
+        -->
+        <subclass name="Manager" discriminator-value="MANAGER">
+            <property name="teamSize" column="team_size" type="integer"/>
+        </subclass>
+
+        <subclass name="Developer" discriminator-value="DEVELOPER">
+            <property name="programmingLanguage" column="programming_language" type="string" length="50"/>
+        </subclass>
+
+    </class>
+
+</hibernate-mapping>
