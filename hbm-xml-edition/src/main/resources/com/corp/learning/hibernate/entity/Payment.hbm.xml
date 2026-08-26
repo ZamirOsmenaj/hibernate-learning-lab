@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC
+        "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+        "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping package="com.corp.learning.hibernate.entity.inheritance">
+
+    <!--
+        TABLE PER SUBCLASS (JOINED-SUBCLASS) INHERITANCE
+        Base table "payments" holds the shared columns; each concrete
+        subclass gets its OWN table holding only its extra columns, joined
+        back to "payments" 1:1 on the primary key. Loading a concrete
+        CreditCardPayment issues an INNER JOIN payments <-> credit_card_payments.
+        Loading the base type polymorphically ("from Payment") issues an
+        OUTER JOIN across every subclass table so Hibernate can figure out,
+        per row, which concrete class to build.
+    -->
+    <class name="Payment" table="payments">
+
+        <id name="id" column="id" type="long">
+            <generator class="identity"/>
+        </id>
+
+        <property name="amount" column="amount" type="big_decimal" not-null="true"/>
+        <property name="paymentDate" column="payment_date" type="java.time.LocalDate" not-null="true"/>
+
+        <many-to-one name="employee" column="employee_id"
+                     class="com.corp.learning.hibernate.entity.Employee" not-null="true"/>
+
+        <joined-subclass name="CreditCardPayment" table="credit_card_payments">
+            <!-- key = the FK column in credit_card_payments that is ALSO its PK, pointing back to payments.id -->
+            <key column="payment_id"/>
+            <property name="cardLast4" column="card_last4" type="string" length="4"/>
+            <property name="cardType" column="card_type" type="string" length="30"/>
+        </joined-subclass>
+
+        <joined-subclass name="BankTransferPayment" table="bank_transfer_payments">
+            <key column="payment_id"/>
+            <property name="iban" column="iban" type="string" length="34"/>
+            <property name="bankName" column="bank_name" type="string" length="100"/>
+        </joined-subclass>
+
+    </class>
+
+</hibernate-mapping>
