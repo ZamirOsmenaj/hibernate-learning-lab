@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC
+        "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+        "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping package="com.corp.learning.hibernate.entity">
+
+    <class name="Project" table="projects">
+
+        <id name="id" column="id" type="long">
+            <generator class="identity"/>
+        </id>
+
+        <version name="version" column="version" type="int"/>
+
+        <property name="name" column="name" type="string" not-null="true" unique="true" length="150"/>
+        <property name="deadline" column="deadline" type="java.time.LocalDate"/>
+
+        <!--
+            INVERSE side of the same "employee_project" join table owned by
+            Employee.projects. inverse="true" here means: when you only add a
+            Project to employee.getProjects(), Hibernate writes the join row.
+            If you only add an Employee to project.getEmployees() (this side)
+            and forget the owning side, NOTHING gets persisted - see
+            Demo06_InverseVsNonInverse for this exact trap, live.
+
+            Both <key> and <many-to-many> column names MUST exactly match the
+            owning side's <key>/<many-to-many> columns since they describe the
+            SAME physical table.
+        -->
+        <set name="employees" table="employee_project" inverse="true" lazy="true">
+            <key column="project_id"/>
+            <many-to-many column="employee_id" class="com.corp.learning.hibernate.entity.Employee"/>
+        </set>
+
+    </class>
+
+</hibernate-mapping>
