@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC
+        "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+        "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping package="com.corp.learning.hibernate.entity">
+
+    <class name="EmployeeProfile" table="employee_profiles">
+
+        <!--
+            SHARED PRIMARY KEY one-to-one: employee_profiles.id is NOT an
+            independent sequence value - it is literally copied from the
+            associated Employee's id via generator class="foreign", which
+            reads the "employee" property below to know which id to reuse.
+            This is the classic, most efficient way to model a strict 1:1 in
+            Hibernate (no separate unique FK column needed - the PK itself
+            IS the FK).
+        -->
+        <id name="id" column="id" type="long">
+            <generator class="foreign">
+                <param name="property">employee</param>
+            </generator>
+        </id>
+
+        <!--
+            constrained="true": employee_profiles.id is also a real FK to
+            employees.id (declared via foreign-key), enforced at the DB level.
+        -->
+        <one-to-one name="employee" class="Employee" constrained="true"/>
+
+        <property name="bio" column="bio" type="string" length="2000"/>
+        <property name="linkedinUrl" column="linkedin_url" type="string" length="255"/>
+
+    </class>
+
+</hibernate-mapping>
