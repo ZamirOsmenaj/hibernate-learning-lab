@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC
+        "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+        "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping package="com.corp.learning.hibernate.entity">
+
+    <class name="Department" table="departments" batch-size="10">
+        <!--
+            batch-size on the <class> element: when several Department proxies
+            need initializing (e.g. Employee.department is lazy and we touch
+            10 different employees from 10 different departments), Hibernate
+            will fetch them in batches of up to 10 with a single
+            "where id in (?,?,?...)" query instead of 10 separate SELECTs.
+            See Demo05_FetchingStrategies.
+        -->
+
+        <id name="id" column="id" type="long">
+            <generator class="identity"/>
+        </id>
+
+        <version name="version" column="version" type="int"/>
+
+        <property name="name" column="name" type="string" not-null="true" length="100"/>
+
+        <!--
+            MANY-TO-ONE Department -> Company. This is the OWNING side of the
+            relationship (holds the FK column). fetch="select" (the default)
+            means: loading a Department does NOT join to companies; the
+            Company is fetched lazily the first time getCompany() is touched,
+            with its own SELECT. Contrast this with Employee.department below,
+            which uses fetch="join".
+        -->
+        <many-to-one name="company" column="company_id" class="Company"
+                     not-null="true" fetch="select" lazy="proxy"/>
+
+        <!--
+            ONE-TO-MANY Department -> Employee via <set>, lazy + batch-size
+            fetch strategy: see Demo05.
+        -->
+        <set name="employees" inverse="true" cascade="save-update" lazy="true" batch-size="10">
+            <key column="department_id" not-null="true"/>
+            <one-to-many class="com.corp.learning.hibernate.entity.Employee"/>
+        </set>
+
+        <!--
+            <list> COLLECTION MAPPING (ordered, allows duplicates)
+            Backed by an extra "position" column in the child table that
+            Hibernate manages for you (0-based index). This is the mapping to
+            reach for when insertion ORDER matters and must survive a reload,
+            e.g. a chronological history log like this budget history.
+
+            The elements themselves are <composite-element> - a value type
+            (BudgetEntry) with no identity of its own, embedded per-row into
+            the collection table "department_budget_history".
+        -->
+        <list name="budgetHistory" table="department_budget_history" cascade="all">
+            <key column="department_id" not-null="true"/>
+            <list-index column="position"/>
+            <composite-element class="com.corp.learning.hibernate.entity.component.BudgetEntry">
+                <property name="year" column="budget_year"/>
+                <property name="amount" column="budget_amount" type="big_decimal"/>
+                <property name="note" column="budget_note" length="255"/>
+            </composite-element>
+        </list>
+
+        <!--
+            <map> COLLECTION MAPPING (key/value pairs)
+            Reach for this whenever the natural shape of the data IS a
+            dictionary, e.g. free-form department attributes/tags. Backed by
+            a simple two-column table (department_id, tag_key) + tag_value,
+            with (department_id, tag_key) effectively unique.
+        -->
+        <map name="tags" table="department_tags" cascade="all">
+            <key column="department_id" not-null="true"/>
+            <map-key column="tag_key" type="string" length="50"/>
+            <element column="tag_value" type="string" length="255"/>
+        </map>
+
+    </class>
+
+</hibernate-mapping>
