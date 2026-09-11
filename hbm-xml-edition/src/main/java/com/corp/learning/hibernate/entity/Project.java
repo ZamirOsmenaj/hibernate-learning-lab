@@ -10,7 +10,7 @@ import java.util.Set;
  * The join table "employee_project" is owned by Employee.projects
  * (inverse="false" there); Project.employees only mirrors it
  * (inverse="true" here). Only one side may own a many-to-many join table -
- * see THEORY.md.
+ * see README-hbm-xml.md.
  */
 public class Project {
 

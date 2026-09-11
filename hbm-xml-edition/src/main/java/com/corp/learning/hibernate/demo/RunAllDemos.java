@@ -39,7 +39,7 @@ public class RunAllDemos {
             banner("ALL DEMOS COMPLETE");
             System.out.println("Explore the database yourself now, e.g.:");
             System.out.println("  docker compose exec db psql -U hibernate_user -d hibernate_lab");
-            System.out.println("See README.md and THEORY.md for the full write-up of everything shown above.");
+            System.out.println("See README.md and README-hbm-xml.md for the full write-up of everything shown above.");
         } finally {
             HibernateUtil.shutdown();
         }

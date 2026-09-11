@@ -140,7 +140,7 @@ A small "corporate" model, deliberately shaped to need every mapping style:
 | fetching strategies | `fetch="join"` on `Employee.department`, `fetch="select"` (default) + `batch-size` on `Department.company`, `fetch="subselect"` on `Employee.projects` — live demo in `Demo05_FetchingStrategies` |
 | natural-id (bonus) | `Employee.hbm.xml` → `email` |
 
-For the *why* behind every one of these, read **[THEORY.md](THEORY.md)** —
+For the *why* behind every one of these, read **README-hbm-xml.md** —
 it explains each concept in plain language with small standalone examples,
 independent of this specific project.
 

@@ -24,7 +24,7 @@
 
         <!--
             <property> ATTRIBUTES WORTH KNOWING (demonstrated across this file
-            and Employee.hbm.xml; full list in THEORY.md):
+            and Employee.hbm.xml; full list in README-hbm-xml.md):
               name      -> Java field name
               column    -> DB column name (defaults to the property name)
               type      -> Hibernate type (Java<->SQL mapping); often inferred
@@ -64,7 +64,7 @@
                   Hibernate inverse="true" here means: "don't bother issuing
                   extra SQL from this side just because you see items in this
                   Set - trust Department.company instead". This avoids
-                  redundant/duplicate UPDATE statements. See THEORY.md.
+                  redundant/duplicate UPDATE statements. See README-hbm-xml.md.
 
               cascade="save-update"
                   Persisting/updating a Company will cascade to its

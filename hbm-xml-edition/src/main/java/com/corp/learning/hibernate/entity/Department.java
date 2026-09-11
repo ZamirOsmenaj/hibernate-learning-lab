@@ -16,7 +16,7 @@ import java.util.Set;
  * Department is the INVERSE side of Company.departments (inverse="true" in
  * the XML) - meaning Hibernate ignores Department objects being merely
  * present in Company.getDepartments() for the purpose of deciding what SQL
- * to issue; it looks at Department.company instead. See THEORY.md "inverse"
+ * to issue; it looks at Department.company instead. See README-hbm-xml.md "inverse"
  * section and Demo06_InverseVsNonInverse.
  *
  * Also demonstrates three different collection-mapping styles side by side:
