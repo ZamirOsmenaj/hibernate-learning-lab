@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.corp.learning</groupId>
+    <artifactId>jpa-annotations-edition</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
+
+    <name>Hibernate Learning Lab - JPA Annotations Edition</name>
+    <description>
+        The same corporate-style reference project as hbm-xml-edition - same domain model,
+        same six demos - mapped with JPA/Hibernate annotations (@Entity, @OneToMany, @Embeddable,
+        @Inheritance, etc.) instead of .hbm.xml files, for a direct side-by-side comparison.
+    </description>
+
+    <properties>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <hibernate.version>5.4.32.Final</hibernate.version>
+        <postgres.version>42.5.4</postgres.version>
+        <slf4j.version>1.7.36</slf4j.version>
+        <logback.version>1.2.12</logback.version>
+    </properties>
+
+    <dependencies>
+        <!--
+            Core Hibernate ORM. Same version, same classic Session/Transaction
+            API as hbm-xml-edition - only the entity-registration mechanism
+            differs (annotated classes vs .hbm.xml resources), see
+            HibernateUtil.java. javax.persistence.* annotation types
+            (@Entity, @Column, etc.) and API classes (PersistenceException,
+            OptimisticLockException) come transitively from hibernate-core;
+            no separate JPA API dependency is needed.
+        -->
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-core</artifactId>
+            <version>${hibernate.version}</version>
+        </dependency>
+
+        <!-- JDBC driver for PostgreSQL -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>${postgres.version}</version>
+        </dependency>
+
+        <!-- Logging: lets us SEE the generated SQL clearly -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${logback.version}</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>jpa-annotations-edition</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.11.0</version>
+                <configuration>
+                    <source>8</source>
+                    <target>8</target>
+                </configuration>
+            </plugin>
+
+            <!--
+                Optional convenience for running a single demo class straight from
+                Maven if you ever install Java/Maven locally (e.g. from an IDE):
+                  mvn exec:java -Dexec.mainClass=com.corp.learning.hibernate.demo.Demo04_OptimisticLocking
+                NOT used by Docker - see the note below on the shade plugin for why.
+            -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.1.0</version>
+                <configuration>
+                    <mainClass>com.corp.learning.hibernate.demo.RunAllDemos</mainClass>
+                </configuration>
+            </plugin>
+
+            <!--
+                Builds the runnable "fat jar" (target/jpa-annotations-edition.jar)
+                containing our classes + every dependency. This is what Docker
+                actually runs, via a plain `java -cp ... <MainClass>` process
+                (see entrypoint.sh) - NOT `mvn exec:java`.
+
+                Why: `mvn exec:java` runs your code INSIDE Maven's own JVM, on a
+                classloader layered on top of Maven's internal one. Hibernate's
+                persister factory does raw reflection (Class.getConstructor(...))
+                during SessionFactory startup, and that in-process classloader
+                setup is a known source of confusing failures there even when the
+                actual dependency jars on disk are perfectly correct and
+                conflict-free. Running the built jar in its own plain `java`
+                process sidesteps the whole class of problem.
+
+                ServicesResourceTransformer merges every dependency's
+                META-INF/services/* files instead of letting one silently
+                overwrite another during shading - needed here so SLF4J can
+                still find the Logback provider it depends on after shading.
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.4.1</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals><goal>shade</goal></goals>
+                        <configuration>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>com.corp.learning.hibernate.demo.RunAllDemos</mainClass>
+                                </transformer>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
