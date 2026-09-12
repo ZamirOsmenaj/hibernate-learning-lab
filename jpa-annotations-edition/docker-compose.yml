@@ -1,0 +1,42 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: jpa-annotations-edition-db
+    environment:
+      POSTGRES_DB: hibernate_lab
+      POSTGRES_USER: hibernate_user
+      POSTGRES_PASSWORD: hibernate_pass
+    ports:
+      # Host port 5433, NOT 5432: hbm-xml-edition's docker-compose.yml also
+      # binds container port 5432 to host port 5432. Using a different host
+      # port here lets both editions' Postgres containers run at the same
+      # time without a port conflict, if you ever want to compare them side
+      # by side. Inside the docker-compose network they both still listen on
+      # the standard 5432 - only the HOST-facing port differs.
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hibernate_user -d hibernate_lab"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    container_name: jpa-annotations-edition-app
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_URL: jdbc:postgresql://db:5432/hibernate_lab
+      DB_USER: hibernate_user
+      DB_PASSWORD: hibernate_pass
+      # Override to run a single demo instead of all of them, e.g.:
+      #   MAIN_CLASS: com.corp.learning.hibernate.demo.Demo04_OptimisticLocking
+      MAIN_CLASS: com.corp.learning.hibernate.demo.RunAllDemos
+
+volumes:
+  pgdata:
