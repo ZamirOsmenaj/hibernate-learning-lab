@@ -2,7 +2,7 @@
 
 A self-contained, corporate-style reference project for learning classic Hibernate
 (native `hbm.xml` mappings, **not** JPA annotations) — relations, collection
-mappings, cascades, `inverse`, inheritance strategies, optimistic locking,
+mappings, cascades, inverse, inheritance strategies, optimistic locking,
 components, and fetching strategies — all demonstrated with real code, real
 `hbm.xml` files, and a real PostgreSQL database, fully Dockerized so you don't
 need Java or Maven installed locally.
@@ -80,16 +80,15 @@ hbm-xml-edition/
 ├── Dockerfile                    Java 8 + Maven build, no local install needed
 ├── entrypoint.sh                 waits for DB, then runs the requested demo
 ├── pom.xml                       Maven build (Hibernate 5.4, Java 8)
-├── THEORY.md                     <-- the concept-by-concept explanations
 ├── src/main/resources/
-│   ├── hibernate.cfg.xml         SessionFactory config + list of all mappings
+│   ├── hibernate.cfg.xml         SessionFactory config
 │   ├── logback.xml               logging config tuned to show SQL clearly
 │   └── com/corp/learning/hibernate/entity/*.hbm.xml   <-- THE MAPPING FILES
 └── src/main/java/com/corp/learning/hibernate/
     ├── entity/                   plain Java objects (POJOs), no annotations at all
     ├── entity/component/         <component> value types (Address, BudgetEntry)
     ├── entity/inheritance/       the joined-subclass and union-subclass hierarchies
-    ├── util/HibernateUtil.java   SessionFactory bootstrap
+    ├── util/HibernateUtil.java   SessionFactory bootstrap + list of all mappings
     └── demo/                     six runnable, narrated demonstrations
 ```
 
@@ -129,7 +128,7 @@ A small "corporate" model, deliberately shaped to need every mapping style:
 | `<map>` | `Department.hbm.xml` → `tags` |
 | `<bag>` | `Employee.hbm.xml` → `certifications` |
 | `<composite-element>` | `Department.hbm.xml` → `budgetHistory` entries (`BudgetEntry`) |
-| cascade options | `Company.hbm.xml`, `Department.hbm.xml`, `Employee.hbm.xml` (all use a *different* cascade on purpose — see THEORY.md) |
+| cascade options | `Company.hbm.xml`, `Department.hbm.xml`, `Employee.hbm.xml` (all use a *different* cascade on purpose) |
 | `inverse` | `Company.hbm.xml`/`Department.hbm.xml` (one-to-many) and `Employee.hbm.xml`/`Project.hbm.xml` (many-to-many) — live demo in `Demo06_InverseVsNonInverse` |
 | `<property>` attributes | `Employee.hbm.xml` (`not-null`, `unique`, `length`, `update="false"`, `formula`) |
 | optimistic locking (`<version>`) | every `<class>` root; live demo in `Demo04_OptimisticLocking` |
@@ -140,7 +139,7 @@ A small "corporate" model, deliberately shaped to need every mapping style:
 | fetching strategies | `fetch="join"` on `Employee.department`, `fetch="select"` (default) + `batch-size` on `Department.company`, `fetch="subselect"` on `Employee.projects` — live demo in `Demo05_FetchingStrategies` |
 | natural-id (bonus) | `Employee.hbm.xml` → `email` |
 
-For the *why* behind every one of these, read **README-hbm-xml.md** —
+For the *why* behind every one of these, read **README-hbm-xml.md** (private repository) —
 it explains each concept in plain language with small standalone examples,
 independent of this specific project.
 
@@ -218,8 +217,7 @@ independent `java` process sidesteps that whole class of problem.
   real environment (use `validate`, and a migration tool like Flyway/Liquibase,
   instead).
 - The classic `Configuration` + `hbm.xml` API is used throughout (no JPA
-  `EntityManager`, no annotations) since that's what you asked to learn — it's
-  also still exactly what you'll find maintaining older enterprise Java
-  codebases.
+  `EntityManager`, no annotations) — it's still exactly what you'll find
+  maintaining older enterprise Java codebases.
 - Every mapping file is heavily commented *in place* — the XML itself is
   meant to be readable as documentation, not just machine input.
