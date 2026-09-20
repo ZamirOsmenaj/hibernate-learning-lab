@@ -8,7 +8,7 @@
     <class name="Department" table="departments" batch-size="10">
         <!--
             batch-size on the <class> element: when several Department proxies
-            need initializing (e.g. Employee.department is lazy and we touch
+            need initializing (e.g. Employee.department is lazy, and we touch
             10 different employees from 10 different departments), Hibernate
             will fetch them in batches of up to 10 with a single
             "where id in (?,?,?...)" query instead of 10 separate SELECTs.

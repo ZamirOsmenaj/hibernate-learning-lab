@@ -41,7 +41,7 @@
             MUST come before version - swapping them (as an earlier version
             of this file did) makes the DTD-validating parser reject the
             whole document with "Could not parse mapping document", with no
-            further detail. If you ever hit that error on a hand-written
+            further detail. If you ever hit that error on a handwritten
             hbm.xml, element order is the first thing to check.
         -->
         <natural-id mutable="true">
