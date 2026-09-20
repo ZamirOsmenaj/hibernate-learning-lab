@@ -54,9 +54,8 @@
         </component>
 
         <!--
-            ONE-TO-MANY Company -> Department, using a <set> (the collection
-            type you already know), but the key thing to study here is
-            cascade + inverse:
+            ONE-TO-MANY Company -> Department, using a <set>,
+            but the key thing to study here is cascade + inverse:
 
               inverse="true"
                   Department is the association owner (it has the company_id
