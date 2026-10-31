@@ -6,7 +6,7 @@ package com.corp.learning.hibernate.entity;
  * generator class="foreign" in the XML). This is the classic Hibernate way
  * to do a true 1:1 without an extra unique-key column.
  *
- * Lifecycle: cascade="all-delete-orphan" is set on the Employee side, so a
+ * Lifecycle: cascade="all" is set on the Employee side, so a
  * profile is created/updated/deleted automatically together with its owning
  * Employee - you never save/delete an EmployeeProfile directly.
  */

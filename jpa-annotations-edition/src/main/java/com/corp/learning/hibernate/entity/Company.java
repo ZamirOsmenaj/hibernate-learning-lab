@@ -92,7 +92,7 @@ public class Company {
      * the owning side of this relationship, Department.company (the
      * @ManyToOne field) is - don't issue extra SQL from this side just
      * because you see items in this Set, trust Department.company instead."
-     * This avoids redundant/duplicate UPDATE statements. See THEORY.md.
+     * This avoids redundant/duplicate UPDATE statements. See README-hbm-xml.md.
      */
     @OneToMany(mappedBy = "company", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private Set<Department> departments = new HashSet<>();

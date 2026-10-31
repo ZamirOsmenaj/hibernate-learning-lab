@@ -19,7 +19,7 @@ import java.util.Set;
  * of hbm's inverse="true": the join table "employee_project" is owned by
  * Employee.projects (no mappedBy there - see Employee.java); this side only
  * mirrors it. Only one side may own a many-to-many join table - see
- * THEORY.md and Demo06_InverseVsNonInverse for what happens if you forget
+ * README-hbm-xml.md and Demo06_InverseVsNonInverse for what happens if you forget
  * this and only write to this (inverse) side.
  */
 @Entity

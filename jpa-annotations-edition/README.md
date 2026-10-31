@@ -5,7 +5,7 @@ The exact same domain model and the exact same six demos as
 **annotations** (`@Entity`, `@OneToMany`, `@Embeddable`, `@Inheritance`, ...)
 instead of `.hbm.xml` mapping files.
 
-If you haven't read the other edition's README/THEORY.md yet, start there -
+If you haven't read the other edition's README/README-hbm-xml.md yet, start there -
 this README assumes you already know the domain model and the six demo
 scenarios, and focuses on what's *different* here.
 
